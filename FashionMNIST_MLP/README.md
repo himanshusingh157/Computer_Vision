@@ -1,0 +1,1 @@
+MLP on Fashion MNIST
