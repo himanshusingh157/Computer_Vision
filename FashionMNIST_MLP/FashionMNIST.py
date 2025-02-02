@@ -63,7 +63,7 @@ print(f"Device Available : {device}")
 #Model, Data, Loss, Optimizer
 traindata = MyDataset(images[:50000],targets[:50000])
 trainloader = DataLoader(traindata, batch_size = 128, shuffle = True)
-testdata = MyDataset(images[:50000],targets[:50000])
+testdata = MyDataset(images[50000:],targets[50000:])
 testloader = DataLoader(testdata, batch_size = 128, shuffle = True)
 net = MyNet()
 torch.save(net.state_dict(), "model.pth")
