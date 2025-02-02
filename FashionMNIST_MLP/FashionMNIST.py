@@ -70,7 +70,7 @@ torch.save(net.state_dict(), "model.pth")
 net = net.to(device)
 lossfn = nn.CrossEntropyLoss()
 optim = torch.optim.SGD(net.parameters(), lr = 0.001)
-epochs = 5
+epochs = 100
 
 
 #Training with SGD
