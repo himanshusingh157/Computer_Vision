@@ -70,81 +70,121 @@ torch.save(net.state_dict(), "model.pth")
 net = net.to(device)
 lossfn = nn.CrossEntropyLoss()
 optim = torch.optim.SGD(net.parameters(), lr = 0.001)
-epochs = 100
+epochs = 5
 
 
 #Training with SGD
-sgd_losses = []
-sgd_accuracies = []
+sgd_train_losses = []
+sgd_train_accuracies = []
+sgd_test_losses = []
+sgd_test_accuracies = []
 for epoch in range(epochs):
     net.train()
-    epoch_losses = []
-    epoch_accuracies = []
+    train_epoch_losses = []
+    train_epoch_accuracies = []
     for x,y in trainloader:
-        x = x.to(device)
-        y = y.to(device)
-        yhat = net(x)
-        optim.zero_grad()
-        loss = lossfn(yhat,y)
-        loss.backward()
-        optim.step()
-        epoch_losses.append(loss.item())
-    sgd_losses.append(np.array(epoch_losses).mean())
-    net.eval()
-    for x,y in testloader:
         x = x.to(device)
         y = y.to(device)
         yhat = net(x)
         _, argmaxes = yhat.max(-1)
         correct = argmaxes == y
-        epoch_accuracies.append(correct.sum().item())
-    sgd_accuracies.append(np.array(epoch_accuracies).sum())
-    print(f"Epoch({epoch}) : loss = {sgd_losses[-1]:.2f} || Accuracy = {sgd_accuracies[-1]/60000:.2f}")
+        train_epoch_accuracies.append(correct.sum().item())
+        optim.zero_grad()
+        loss = lossfn(yhat,y)
+        loss.backward()
+        optim.step()
+        train_epoch_losses.append(loss.item())
+    sgd_train_losses.append(np.array(train_epoch_losses).mean())
+    sgd_train_accuracies.append(np.array(train_epoch_accuracies).sum())
+    net.eval()
+    test_epoch_losses = []
+    test_epoch_accuracies = []
+    for x,y in testloader:
+        x = x.to(device)
+        y = y.to(device)
+        yhat = net(x)
+        loss = lossfn(yhat,y)
+        test_epoch_losses.append(loss.item())
+        _, argmaxes = yhat.max(-1)
+        correct = argmaxes == y
+        test_epoch_accuracies.append(correct.sum().item())
+    sgd_test_accuracies.append(np.array(test_epoch_accuracies).sum())
+    sgd_test_losses.append(np.array(test_epoch_losses).mean())
+    print(f"Epoch({epoch}) : Train loss = {sgd_train_losses[-1]:.2f} || \
+    Train Accuracy = {sgd_train_accuracies[-1]/50000:.2f} || \
+    Test loss = {sgd_test_losses[-1]:.2f} || \
+    Test Accuracy = {sgd_test_accuracies[-1]/10000:.2f} ")
 torch.save(net.state_dict(), "final_SGD.pth")
 
 #Training with Adam
 net.load_state_dict(torch.load("model.pth"))
-adam_losses = []
-adam_accuracies = []
 optim = torch.optim.Adam(net.parameters(), lr = 0.001)
+adam_train_losses = []
+adam_train_accuracies = []
+adam_test_losses = []
+adam_test_accuracies = []
 for epoch in range(epochs):
     net.train()
-    epoch_losses = []
-    epoch_accuracies = []
+    train_epoch_losses = []
+    train_epoch_accuracies = []
     for x,y in trainloader:
-        x = x.to(device)
-        y = y.to(device)
-        yhat = net(x)
-        optim.zero_grad()
-        loss = lossfn(yhat,y)
-        loss.backward()
-        optim.step()
-        epoch_losses.append(loss.item())
-    adam_losses.append(np.array(epoch_losses).mean())
-    net.eval()
-    for x,y in testloader:
         x = x.to(device)
         y = y.to(device)
         yhat = net(x)
         _, argmaxes = yhat.max(-1)
         correct = argmaxes == y
-        epoch_accuracies.append(correct.sum().item())
-    adam_accuracies.append(np.array(epoch_accuracies).sum())
-    print(f"Epoch({epoch}) : loss = {adam_losses[-1]:.2f} || Accuracy = {adam_accuracies[-1]/60000:.2f}")
-torch.save(net.state_dict(), "final_Adam.pth")
+        train_epoch_accuracies.append(correct.sum().item())
+        optim.zero_grad()
+        loss = lossfn(yhat,y)
+        loss.backward()
+        optim.step()
+        train_epoch_losses.append(loss.item())
+    adam_train_losses.append(np.array(train_epoch_losses).mean())
+    adam_train_accuracies.append(np.array(train_epoch_accuracies).sum())
+    net.eval()
+    test_epoch_losses = []
+    test_epoch_accuracies = []
+    for x,y in testloader:
+        x = x.to(device)
+        y = y.to(device)
+        yhat = net(x)
+        loss = lossfn(yhat,y)
+        test_epoch_losses.append(loss.item())
+        _, argmaxes = yhat.max(-1)
+        correct = argmaxes == y
+        test_epoch_accuracies.append(correct.sum().item())
+    adam_test_accuracies.append(np.array(test_epoch_accuracies).sum())
+    adam_test_losses.append(np.array(test_epoch_losses).mean())
+    print(f"Epoch({epoch}) : Train loss = {adam_train_losses[-1]:.2f} || \
+    Train Accuracy = {adam_train_accuracies[-1]/50000:.2f} || \
+    Test loss = {adam_test_losses[-1]:.2f} || \
+    Test Accuracy = {adam_test_accuracies[-1]/10000:.2f} ")
+torch.save(net.state_dict(), "final_adam.pth")
 
-plt.figure(figsize = (20,5))
-plt.subplot(121)
-plt.title("Loss")
-plt.plot(np.arange(epochs)+1, sgd_losses, label = "SGD Training loss")
-plt.plot(np.arange(epochs)+1, adam_losses, label = "Adam Training loss")
-plt.legend()
-plt.subplot(122)
-plt.title("Accuracy")
-plt.plot(np.arange(epochs)+1, sgd_accuracies, label = "SGD Test Accuracy")
-plt.plot(np.arange(epochs)+1, adam_accuracies, label = "Adam Test Accuracy")
-plt.gca().set_yticklabels(['{:.0f}%'.format(x*100/60000) for x in plt.gca().get_yticks()])
-plt.legend()
-plt.savefig("Epochs_Adam.png")
+
+fig, axs = plt.subplots(2, 2)
+axs[0, 0].plot(np.arange(epochs)+1, sgd_train_losses, label = "Training")
+axs[0, 0].plot(np.arange(epochs)+1, sgd_test_losses, label = "Validation")
+axs[0, 0].set_title('SGD Loss')
+axs[0, 0].legend()
+
+axs[0, 1].plot(np.arange(epochs)+1, np.array(sgd_train_accuracies)/500, label = "Training")
+axs[0, 1].plot(np.arange(epochs)+1, np.array(sgd_test_accuracies)/100, label = "Validation")
+axs[0, 1].set_title('SGD Accuracy')
+axs[0, 1].legend()
+
+axs[1, 0].plot(np.arange(epochs)+1, adam_train_losses, label = "Training")
+axs[1, 0].plot(np.arange(epochs)+1, adam_test_losses, label = "Validation")
+axs[1, 0].set_title('Adam Loss')
+axs[1, 0].legend()
+
+axs[1, 1].plot(np.arange(epochs)+1, np.array(adam_train_accuracies)/500, label = "Training")
+axs[1, 1].plot(np.arange(epochs)+1, np.array(adam_test_accuracies)/100, label = "Validation")
+axs[1, 1].set_title('Adam Accuracy')
+axs[1, 1].legend()
+
+plt.tight_layout()
+plt.savefig('Epochs.png')
+
 
 
